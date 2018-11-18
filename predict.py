@@ -1,6 +1,7 @@
 import os 
 import numpy as np 
 import pandas as pd
+import tensorflow as tf
 from keras.preprocessing import image as kimage
 from keras.models import load_model
     
@@ -43,25 +44,30 @@ def create_csv(initial_df, classes):
     
     classes = pd.Series(classes)
     initial_df['Category'] = classes.values
-    initial_df.to_csv('predictions.csv')
+    initial_df.to_csv('predictions.csv', index=False)
     return initial_df
 
 def model():
     """replicate model by loading architecture and weights"""
-    model = load_model(MODEL)
+    model = tf.keras.models.load_model(MODEL)
     return model
 
-def predict(model, test_data):
+def predict(model, test_generator):
     """output predicted labels for test
     
     model: keras model
-    test_data: numerical stream of images to predict
+    test_generator: numerical stream of images to predict
 
     returns:
-        classes: y hat predictions
+        predictor: y hat predictions
     """
-    classes = model.predict_classes(test_data) 
-    return classes
+    predictor = model.predict_generator(test_generator, verbose=1) 
+    return predictor
 
 if __name__=="__main__":
-    load_test_images()
+    df, test_gen = load_test_images()
+    model = model()
+    predictions = predict(model, test_gen)
+    classes = [np.argmax(i) for i in predictions]
+    final_df = create_csv(df, classes)
+    print(final_df)
