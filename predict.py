@@ -37,7 +37,7 @@ def create_csv(initial_df, classes):
     classes: list of yhat predictions
     
     returns:
-        location: full dataframe"""
+        initial_df: full dataframe containing ImageID and Category"""
     
     classes = pd.Series(classes)
     initial_df['Category'] = classes.values
