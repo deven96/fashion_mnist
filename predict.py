@@ -1,9 +1,9 @@
 import os 
+import sys
 import numpy as np 
 import pandas as pd
 import tensorflow as tf
 from keras.preprocessing import image as kimage
-from keras.models import load_model
     
 PATH = os.getcwd()
 #path of test and train folders are located a directory above
@@ -15,21 +15,18 @@ MODEL = os.path.join(PATH, 'fashion_mnist_trained.h5')
 def load_test_images():
     """loads test images from the folder"""
     
-    test_datagen = kimage.ImageDataGenerator()
+    test_datagen = kimage.ImageDataGenerator(rescale=1./255)
     test_generator = test_datagen.flow_from_directory(
     directory=TEST_PATH,
     color_mode="grayscale",
     target_size=(28, 28),
     batch_size=1,
+    class_mode=None,
     shuffle=False
         )
-    x_test = []
-    for sample in TEST_BATCH:
-        # remove '.jpg'
-        x_test.append(sample[:-4])
-        
+
     # creating dataframe to be used
-    df = pd.DataFrame(x_test, columns=['ImageID'])
+    df = pd.DataFrame(sorted(TEST_BATCH), columns=['ImageID'])
 
     return (df, test_generator)
 
@@ -61,13 +58,14 @@ def predict(model, test_generator):
     returns:
         predictor: y hat predictions
     """
+    #reset the generator before use to prevent random output
+    test_generator.reset()
     predictor = model.predict_generator(test_generator, verbose=1) 
-    return predictor
+    return [np.argmax(i) for i in predictor]
 
 if __name__=="__main__":
     df, test_gen = load_test_images()
     model = model()
     predictions = predict(model, test_gen)
-    classes = [np.argmax(i) for i in predictions]
-    final_df = create_csv(df, classes)
+    final_df = create_csv(df, predictions)
     print(final_df)
